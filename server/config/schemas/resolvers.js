@@ -3,9 +3,10 @@ const { User, Book } = require("../models");
 const { signToken } = require("../utils/auth");
 
 const resolvers = {
+  //Query for GETS
   Query: {
-    //get one user
-    getSingleUser: async (_parent, userData, context) => {
+    //get the user that is logged in (by checking for context)
+    me: async (_parent, userData, context) => {
       if (context.user) {
         const foundUser = await User.findOne({
           $or: [
@@ -21,9 +22,10 @@ const resolvers = {
     },
   },
 
-  //---------------------------------------------------
+  //Mutations for PUT, POST, DELETES
 
   Mutation: {
+    //create a new user
     createUser: async (_parent, { username, email, password }) => {
       const user = await User.create({ username, email, password });
 
@@ -35,6 +37,7 @@ const resolvers = {
       return { token, user };
     },
 
+    //login existing user 
     login: async (_parent, { email, username, password }) => {
       const user = await User.findOne({
         $or: [{ email: email }, { username: username }],
@@ -42,7 +45,7 @@ const resolvers = {
       if (!user) {
         throw new AuthenticationError("Cannot find user!");
       }
-
+      //use method on User model to check password 
       const correctPw = await user.isCorrectPassword(password);
 
       if (!correctPw) {
@@ -53,6 +56,7 @@ const resolvers = {
       return { token, user };
     },
 
+    //if the user is logged in, save a book to the set of saved books
     saveBook: async (_parent, bookData, context) => {
       if (context.user) {
         const updatedUser = await User.findByIdAndUpdate(
@@ -65,7 +69,7 @@ const resolvers = {
       throw new AuthenticationError("You need to be logged in!");
     },
 
-
+    //if the user is logged in, pull a book from the set to delete 
     removeBook: async (_parent, bookData, context) => {
       if(context.user) {
         const updatedUser = await User.findOneAndUpdate(
